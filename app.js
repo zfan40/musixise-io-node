@@ -39,54 +39,7 @@ var io = require('socket.io').listen(app.listen(3002)); //wocao...!!!
 var activeRooms = [];
 
 io.on('connection', function(socket) {
-    console.log('connected');
     var addedUser = false;
-
-    // when the client emits 'new message', this listens and executes
-    socket.on('mmsg', function(data) {
-        // we tell the client to execute 'new message'
-        var stageName = JSON.parse(data).from; //stageName is the nickname
-        // console.log(JSON.stringify(data));
-        console.log('sending note to ' + stageName);
-        //send to all in the room except the sender. different from io.socket.in.emit
-        socket.broadcast.to(stageName).emit('tocmsg', {
-            // socket.broadcast.emit('new message', {  
-            // io.sockets.in(stageName).emit('new message', {
-            // io.sockets.emit('new message', {
-            username: socket.username,
-            message: data
-        });
-    });
-
-    /************* example code *************/
-    // when the client emits 'add user', this listens and executes
-    // socket.on('add user', function(username) {
-    //     if (addedUser) return;
-    //     // we store the username in the socket session for this client
-    //     socket.username = username;
-    //     ++numUsers;
-    //     addedUser = true;
-    //     socket.emit('login', {
-    //         numUsers: numUsers
-    //     });
-    //     // echo globally (all clients) that a person has connected
-    //     socket.broadcast.emit('user joined', {
-    //         username: socket.username,
-    //         numUsers: numUsers
-    //     });
-    // });
-    // when the user disconnects.. perform this
-    // socket.on('disconnect', function() {
-    //     if (addedUser) {
-    //         --numUsers;
-    //         // echo globally that this client has left
-    //         socket.broadcast.emit('user left', {
-    //             username: socket.username,
-    //             numUsers: numUsers
-    //         });
-    //     }
-    // });
-
     // musician create a stage
     //best have a userauth here
     //艹，应该stage名跟着nickname好，还是谁抢占快。应该第一种吧,现在是按照第二种逻辑，但第一种也许更合理？！？！？！？！？！
@@ -99,26 +52,63 @@ io.on('connection', function(socket) {
         // socket.emit('dup stage');
         // }
         this.on('disconnect', function() {
-        		this.broadcast.to(nickname).emit('no stage');
-        		var l = activeRooms.length;
-        		for (var i = 0; i<=l-1;i++) {
-        			if (activeRooms[i]==nickname) {
-        				activeRooms.splice(i,1);
-        				break;
-        			}
-        		}
+            console.log('musixiser' + nickname + 'disconnect');
+            this.broadcast.to(nickname).emit('no stage');
+            var l = activeRooms.length;
+            for (var i = 0; i <= l - 1; i++) {
+                if (activeRooms[i] == nickname) {
+                    activeRooms.splice(i, 1);
+                    break;
+                }
+            }
         });
+
+
+        // when the client emits 'new message', this listens and executes
+        this.on('mmsg', function(data) {
+            console.log('sendingg note to ' + nickname);
+            this.broadcast.to(nickname).emit('res_MusixiserMIDI', {
+                username: nickname,
+                message: data
+            });
+        });
+
+        this.on('req_MusixiserComment', function(data) {
+            this.broadcast.to(nickname).emit('res_MusixiserComment', data);
+        });
+        
+        this.on('req_MusixiserPickSong', function(data) {
+            this.broadcast.to(nickname).emit('res_MusixiserPickSong', data);
+        });
+
     });
 
     // audience enter a stage
-    socket.on('enter stage', function(nickname) {
+    socket.on('audienceEnterStage', function(nickname) {
         //make sure audience enter a created stage
         if (activeRooms.indexOf(nickname) >= 0) {
-            socket.join(nickname);
+            this.join(nickname);
+            this.broadcast.to(nickname).emit('AudienceCome');
             console.log('stage ' + nickname + ' entered');
         } else {
-            socket.emit('no stage');
+            this.emit('no stage');
         }
+
+        this.on('req_AudienceComment', function(commentMsg) {
+            this.broadcast.to(nickname).emit('res_AudienceComment', commentMsg);
+        });
+        this.on('req_AudienceOrderSong', function(order_songname) { //听众点歌
+            console.log('观众点歌');
+            this.broadcast.to(nickname).emit('res_AudienceOrderSong', order_songname);
+        });
+        this.on('disconnect', function() { //not real disconnect
+            // console.log('audience leave a stage');
+            // this.broadcast.to(nickname).emit('AudienceLeave');
+        });
+        this.on('req_AudienceLeaveRoom', function() {
+            this.broadcast.to(nickname).emit('res_AudienceLeaveRoom');
+            this.leave(nickname);
+        })
 
     });
 
@@ -130,4 +120,4 @@ io.on('connection', function(socket) {
 // if (!module.parent) {
 //     app.listen(3002);
 //     console.log('listening on port 3002');
-// 
+//
