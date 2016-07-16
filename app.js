@@ -42,6 +42,7 @@ io.on('connection', function(socket) {
         // if (activeMusixiserId.indexOf(nickname)==-1) {
         socket.join(nickname);
         activeMusixiserId.push(nickname);
+        userInfo.beginTime = + new Date();
         activeMusixiserInfo.push(userInfo);
         console.log('stage ' + nickname + ' created'+JSON.stringify(userInfo));
         io.emit('moreActiveMusician',userInfo); //用this或socket，stagelist端收不到。use io will send to every where, 也许不是design pattern....凑活先用
@@ -87,6 +88,7 @@ io.on('connection', function(socket) {
         for (var i = 0;i<=activeMusixiserId.length-1;i++) {
             if (activeMusixiserId[i]==nickname) {
                 activeMusixiserInfo[i].audienceNum += 1;
+                this.emit('res_AudienceEnterStage',activeMusixiserInfo[i]);
                 break;
             }
         }
