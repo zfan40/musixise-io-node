@@ -111,6 +111,12 @@ io.on('connection', function(socket) {
         });
         this.on('disconnect', function() { //not real disconnect
             // console.log('audience leave a stage');
+            for (var i = 0;i<=activeMusixiserId.length-1;i++) {
+                if (activeMusixiserId[i]==nickname) {
+                    activeMusixiserInfo[i].audienceNum -= 1;
+                    break;
+                }
+            }
             this.broadcast.to(nickname).emit('AudienceLeave');
             io.emit('audienceNumUpdate',{nickname:nickname,amountdiff:-1});
         });
