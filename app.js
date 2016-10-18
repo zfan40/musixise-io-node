@@ -36,26 +36,26 @@ var activeMusixiserInfo = [];
 io.on('connection', function(socket) {
     var addedUser = false;
     // musician create a stage, best have a userauth here
-    //艹，应该stage名跟着nickname好，还是谁抢占快。应该第一种吧,现在是按照第二种逻辑，但第一种也许更合理？！？！？！？！？！
+    //艹，应该stage名跟着musixiserId好，还是谁抢占快。应该第一种吧,现在是按照第二种逻辑，但第一种也许更合理？！？！？！？！？！
     socket.on('create stage', function(userInfo) {
-        var nickname = userInfo.name;
-        // if (activeMusixiserId.indexOf(nickname)==-1) {
-        socket.join(nickname);
-        activeMusixiserId.push(nickname);
+        var musixiserId = userInfo.name;
+        // if (activeMusixiserId.indexOf(musixiserId)==-1) {
+        socket.join(musixiserId);
+        activeMusixiserId.push(musixiserId);
         userInfo.beginTime = + new Date();
         activeMusixiserInfo.push(userInfo);
-        console.log('stage ' + nickname + ' created'+JSON.stringify(userInfo));
+        console.log('stage ' + musixiserId + ' created'+JSON.stringify(userInfo));
         io.emit('moreActiveMusician',userInfo); //用this或socket，stagelist端收不到。use io will send to every where, 也许不是design pattern....凑活先用
         // } else {
         // socket.emit('dup stage');
         // }
         this.on('disconnect', function() {
-            console.log('musixiser' + nickname + 'disconnect');
-            io.emit('lessActiveMusician',nickname);
-            this.broadcast.to(nickname).emit('no stage');
+            console.log('musixiser' + musixiserId + 'disconnect');
+            io.emit('lessActiveMusician',musixiserId);
+            this.broadcast.to(musixiserId).emit('no stage');
             var l = activeMusixiserId.length;
             for (var i = 0; i <= l - 1; i++) {
-                if (activeMusixiserId[i] == nickname) {
+                if (activeMusixiserId[i] == musixiserId) {
                     activeMusixiserId.splice(i, 1);
                     activeMusixiserInfo.splice(i, 1);
                     break;
@@ -66,64 +66,64 @@ io.on('connection', function(socket) {
 
         // when the client emits 'new message', this listens and executes
         this.on('mmsg', function(data) {
-            console.log('sendingg note to ' + nickname);
-            this.broadcast.to(nickname).emit('res_MusixiserMIDI', {
-                username: nickname,
+            console.log('sendingg note to ' + musixiserId);
+            this.broadcast.to(musixiserId).emit('res_MusixiserMIDI', {
+                username: musixiserId,
                 message: data
             });
         });
 
         this.on('req_MusixiserComment', function(data) {
-            this.broadcast.to(nickname).emit('res_MusixiserComment', data);
+            this.broadcast.to(musixiserId).emit('res_MusixiserComment', data);
         });
         
         this.on('req_MusixiserPickSong', function(data) {
-            this.broadcast.to(nickname).emit('res_MusixiserPickSong', data);
+            this.broadcast.to(musixiserId).emit('res_MusixiserPickSong', data);
         });
 
     });
 
     // audience enter a stage
-    socket.on('audienceEnterStage', function(nickname) {
+    socket.on('audienceEnterStage', function(musixiserId) {
         for (var i = 0;i<=activeMusixiserId.length-1;i++) {
-            if (activeMusixiserId[i]==nickname) {
+            if (activeMusixiserId[i]==musixiserId) {
                 activeMusixiserInfo[i].audienceNum += 1;
                 this.emit('res_AudienceEnterStage',activeMusixiserInfo[i]);
                 break;
             }
         }
         //make sure audience enter a created stage
-        io.emit('audienceNumUpdate',{nickname:nickname,amountdiff:1});
-        if (activeMusixiserId.indexOf(nickname) >= 0) {
-            this.join(nickname);
-            this.broadcast.to(nickname).emit('AudienceCome');
-            console.log('stage ' + nickname + ' entered');
+        io.emit('audienceNumUpdate',{nickname:musixiserId,amountdiff:1});
+        if (activeMusixiserId.indexOf(musixiserId) >= 0) {
+            this.join(musixiserId);
+            this.broadcast.to(musixiserId).emit('AudienceCome');
+            console.log('stage ' + musixiserId + ' entered');
         } else {
             this.emit('no stage');
         }
 
         this.on('req_AudienceComment', function(commentMsg) {
-            this.broadcast.to(nickname).emit('res_AudienceComment', commentMsg);
+            this.broadcast.to(musixiserId).emit('res_AudienceComment', commentMsg);
         });
         this.on('req_AudienceOrderSong', function(order_songname) { //听众点歌
             console.log('观众点歌');
-            this.broadcast.to(nickname).emit('res_AudienceOrderSong', order_songname);
+            this.broadcast.to(musixiserId).emit('res_AudienceOrderSong', order_songname);
         });
         this.on('disconnect', function() { //not real disconnect
             // console.log('audience leave a stage');
             for (var i = 0;i<=activeMusixiserId.length-1;i++) {
-                if (activeMusixiserId[i]==nickname) {
+                if (activeMusixiserId[i]==musixiserId) {
                     activeMusixiserInfo[i].audienceNum -= 1;
                     break;
                 }
             }
-            this.broadcast.to(nickname).emit('AudienceLeave');
-            io.emit('audienceNumUpdate',{nickname:nickname,amountdiff:-1});
+            this.broadcast.to(musixiserId).emit('AudienceLeave');
+            io.emit('audienceNumUpdate',{nickname:musixiserId,amountdiff:-1});
         });
         this.on('req_AudienceLeaveRoom', function() {
             //也要做对应的人数更新操作呀呀呀
-            this.broadcast.to(nickname).emit('res_AudienceLeaveRoom');
-            this.leave(nickname);
+            this.broadcast.to(musixiserId).emit('res_AudienceLeaveRoom');
+            this.leave(musixiserId);
         })
 
     });
