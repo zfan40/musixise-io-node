@@ -38,7 +38,7 @@ io.on('connection', function(socket) {
     // musician create a stage, best have a userauth here
     //艹，应该stage名跟着musixiserId好，还是谁抢占快。应该第一种吧,现在是按照第二种逻辑，但第一种也许更合理？！？！？！？！？！
     socket.on('create stage', function(userInfo) {
-        var musixiserId = userInfo.name;
+        var musixiserId = userInfo.uid;
         // if (activeMusixiserId.indexOf(musixiserId)==-1) {
         socket.join(musixiserId);
         activeMusixiserId.push(musixiserId);
@@ -93,7 +93,7 @@ io.on('connection', function(socket) {
             }
         }
         //make sure audience enter a created stage
-        io.emit('audienceNumUpdate',{nickname:musixiserId,amountdiff:1});
+        io.emit('audienceNumUpdate',{musixiserId:musixiserId,amountdiff:1});
         if (activeMusixiserId.indexOf(musixiserId) >= 0) {
             this.join(musixiserId);
             this.broadcast.to(musixiserId).emit('AudienceCome');
@@ -118,7 +118,7 @@ io.on('connection', function(socket) {
                 }
             }
             this.broadcast.to(musixiserId).emit('AudienceLeave');
-            io.emit('audienceNumUpdate',{nickname:musixiserId,amountdiff:-1});
+            io.emit('audienceNumUpdate',{musixiserId:musixiserId,amountdiff:-1});
         });
         this.on('req_AudienceLeaveRoom', function() {
             //也要做对应的人数更新操作呀呀呀
