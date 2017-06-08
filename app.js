@@ -38,7 +38,7 @@ io.on('connection', function(socket) {
     // musician create a stage, best have a userauth here
     //艹，应该stage名跟着musixiserId好，还是谁抢占快。应该第一种吧,现在是按照第二种逻辑，但第一种也许更合理？！？！？！？！？！
     socket.on('create stage', function(userInfo) {
-        var musixiserId = userInfo.uid;
+        var musixiserId = ''+userInfo.uid;
         // if (activeMusixiserId.indexOf(musixiserId)==-1) {
         socket.join(musixiserId);
         activeMusixiserId.push(musixiserId);
@@ -76,7 +76,7 @@ io.on('connection', function(socket) {
         this.on('req_MusixiserComment', function(data) {
             this.broadcast.to(musixiserId).emit('res_MusixiserComment', data);
         });
-        
+
         this.on('req_MusixiserPickSong', function(data) {
             this.broadcast.to(musixiserId).emit('res_MusixiserPickSong', data);
         });
