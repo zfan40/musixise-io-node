@@ -61,8 +61,22 @@ io.on('connection', function(socket) {
                     break;
                 }
             }
+            socket.leave(musixiserId);
         });
-
+        this.on('destroy stage', function() {
+            console.log('musixiser' + musixiserId + 'disconnect');
+            io.emit('lessActiveMusician',musixiserId);
+            this.broadcast.to(musixiserId).emit('no stage');
+            var l = activeMusixiserId.length;
+            for (var i = 0; i <= l - 1; i++) {
+                if (activeMusixiserId[i] == musixiserId) {
+                    activeMusixiserId.splice(i, 1);
+                    activeMusixiserInfo.splice(i, 1);
+                    break;
+                }
+            }
+            socket.leave(musixiserId);
+        });
 
         // when the client emits 'new message', this listens and executes
         this.on('mmsg', function(data) {
